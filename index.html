@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>프리첼 게임</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+    <style>
+        body {
+            font-family: 'Press Start 2P', sans-serif;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f0f0f0; /* 밝은 회색 배경 */
+        }
+
+        .game-container {
+            text-align: center;
+            background-color: #fff; /* 흰색 컨테이너 */
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+            max-width: 90%;
+            width: 450px;
+        }
+
+        h1 {
+            color: #a78bfa; /* 연한 보라색 제목 */
+            margin-bottom: 16px;
+            font-size: 2em;
+        }
+
+        #game-board {
+            border: 4px solid #d8b4fe; /* 연한 보라색 테두리 */
+            background-color: #f5f5f5; /* 아주 연한 회색 게임 보드 */
+            margin-bottom: 20px;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+        }
+
+        #message-container {
+            margin-bottom: 20px;
+            color: #6b7280; /* 중간 회색 텍스트 */
+            font-size: 1.1em;
+            min-height: 2.5em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px;
+            border-radius: 8px;
+            background-color: #e5e7eb; /* 연한 회색 메시지 배경 */
+        }
+
+        .button-container {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .game-button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            background-color: #8b5cf6; /* 보라색 버튼 */
+            color: white;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            font-family: 'Press Start 2P', sans-serif;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            text-shadow: 1px 1px 0px #5b21b6;
+        }
+
+        .game-button:hover {
+            background-color: #7c3aed; /* 약간 더 어두운 보라색 */
+        }
+
+        .game-button:disabled {
+            background-color: #d946ef; /* 연한 자주색 */
+            cursor: not-allowed;
+            opacity: 0.6;
+            box-shadow: none;
+            text-shadow: none;
+        }
+
+        #score-display {
+            font-size: 1.5em;
+            color: #fcd34d; /* 노란색 점수 */
+            margin-bottom: 20px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        /* 모달 스타일 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 10;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: #fff; /* 흰색 모달 배경 */
+            color: #1f2937; /* 어두운 텍스트 색상 */
+            padding: 20px;
+            border-radius: 12px;
+            border: 4px solid #d8b4fe; /* 연한 보라색 테두리 */
+            max-width: 80%;
+            text-align: center;
+            position: relative;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+        }
+
+        .modal-content h2 {
+            font-size: 1.8em;
+            margin-bottom: 16px;
+            color: #a78bfa; /* 연한 보라색 제목 */
+        }
+
+        .modal-content p {
+            font-size: 1.1em;
+            margin-bottom: 24px;
+            color: #4b5563; /* 약간 어두운 회색 텍스트 */
+        }
+
+        .modal-button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            background-color: #8b5cf6; /* 보라색 모달 버튼 */
+            color: white;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            font-family: 'Press Start 2P', sans-serif;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            text-shadow: 1px 1px 0px #5b21b6;
+        }
+
+        .modal-button:hover {
+            background-color: #7c3aed; /* 약간 더 어두운 보라색 */
+        }
+
+        .close-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 1.5em;
+            cursor: pointer;
+            color: #a78bfa; /* 연한 보라색 닫기 버튼 */
+            opacity: 0.7;
+            transition: opacity 0.2s ease;
+        }
+
+        .close-button:hover {
+            opacity: 1;
+        }
+
+        #game-canvas {
+            background-color: #f5f5f5;
+            border: 4px solid #d8b4fe;
+            border-radius: 8px;
+            display: block;
+            margin: 0 auto;
+            max-width: 100%;
+            height: auto;
+        }
+
+        @media screen and (max-width: 600px) {
+            .game-container {
+                padding: 16px;
+            }
+            h1 {
+                font-size: 1.75em;
+            }
+            #game-board {
+                width: 95%;
+                height: auto;
+            }
+            .button-container {
+                flex-direction: column;
+                gap: 16px;
+            }
+            .game-button {
+                font-size: 1em;
+                padding: 10px 20px;
+            }
+            #score-display {
+                font-size: 1.25em;
+            }
+            .modal-content {
+                padding: 16px;
+            }
+            .modal-content h2 {
+                font-size: 1.5em;
+            }
+            .modal-content p {
+                font-size: 1em;
+            }
+            .modal-button {
+                font-size: 1em;
+                padding: 10px 20px;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 font-inter antialiased">
+    <div class="game-container">
+        <h1 class="text-purple-500 text-2xl font-bold mb-4">프리첼 게임</h1>
+        <canvas id="game-canvas" width="400" height="400"></canvas>
+        <div id="score-display" class="text-yellow-500 text-xl font-semibold mb-4">점수: 0</div>
+        <div id="message-container" class="bg-gray-200 rounded-md p-2 mb-4 min-h-[2.5em] flex items-center justify-center"></div>
+        <div class="button-container">
+            <button id="start-button" class="game-button bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded">시작</button>
+            <button id="pause-button" class="game-button bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" disabled>일시정지</button>
+            <button id="reset-button" class="game-button bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">초기화</button>
+            <button id="info-button" class="game-button bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">게임 정보</button>
+        </div>
+    </div>
+
+    <div id="info-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h2>프리첼 게임 정보</h2>
+            <p>
+                화살표 키를 사용하여 프리첼을 움직여 모든 하얀색 점을 수집하세요.<br>
+                벽이나 자신의 꼬리에 부딪히면 게임이 종료됩니다.
+            </p>
+            <button id="close-modal-button" class="modal-button">확인</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+        const scoreDisplay = document.getElementById('score-display');
+        const messageContainer = document.getElementById('message-container');
+        const startButton = document.getElementById('start-button');
+        const pauseButton = document.getElementById('pause-button');
+        const resetButton = document.getElementById('reset-button');
+        const infoButton = document.getElementById('info-button');
+        const infoModal = document.getElementById('info-modal');
+        const closeModalButton = document.getElementById('close-modal-button');
+        const modalCloseButton = document.querySelector('.close-button');
+
+        const gridSize = 20;
+        let pretzel = [{ x: 10, y: 10 }];
+        let direction = { x: 1, y: 0 };
+        let points = [];
+        let gameRunning = false;
+        let gameInterval;
+        let score = 0;
+        let paused = false;
+        let gameSpeed = 200;
+        let collectedPoints = 0;  // 먹은 점의 개수
+        const totalPoints = 10;    // 총 점의 개수
+        let level = 1;
+
+        function generatePoints() {
+            points = [];
+            for (let i = 0; i < totalPoints; i++) {
+                let x, y;
+                do {
+                    x = Math.floor(Math.random() * (canvas.width / gridSize));
+                    y = Math.floor(Math.random() * (canvas.height / gridSize));
+                } while (points.some(p => p.x === x && p.y === y) || (x === 10 && y === 10));  // 시작 위치에 생성 방지
+                points.push({ x, y });
+            }
+        }
+
+        function draw() {
+            ctx.fillStyle = '#f5f5f5'; // 캔버스 배경색
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 프리첼 그리기
+            ctx.fillStyle = '#a855f7';  // 연보라색
+            pretzel.forEach(segment => {
+                ctx.beginPath();
+                ctx.roundRect(segment.x * gridSize, segment.y * gridSize, gridSize, gridSize, [5]);
+                ctx.fill();
+                ctx.strokeStyle = '#d946ef'; // 더 진한 보라색 테두리
+                ctx.stroke();
+            });
+
+            // 점 그리기
+            points.forEach(point => {
+                ctx.fillStyle = '#ffffff'; // 하얀색 점
+                ctx.beginPath();
+                ctx.arc(point.x * gridSize + gridSize / 2, point.y * gridSize + gridSize / 2, gridSize / 4, 0, 2 * Math.PI);
+                ctx.fill();
+                ctx.strokeStyle = '#e0e0e0'; // 연한 회색 테두리
+                ctx.stroke();
+            });
+        }
+
+        function update() {
+            if (!gameRunning) return;
+
+            const head = { x: pretzel[0].x + direction.x, y: pretzel[0].y + direction.y };
+
+            // 벽 충돌 검사
+            if (head.x < 0 || head.x >= canvas.width / gridSize || head.y < 0 || head.y >= canvas.height / gridSize) {
+                gameOver();
+                return;
+            }
+
+            // 자기 자신 충돌 검사
+            for (let i = 1; i < pretzel.length; i++) {
+                if (head.x === pretzel[i].x && head.y === pretzel[i].y) {
+                    gameOver();
+                    return;
+                }
+            }
+
+            pretzel.unshift(head);
+
+            // 점 먹기
+            let pointIndex = points.findIndex(point => point.x === head.x && point.y === head.y);
+            if (pointIndex !== -1) {
+                points.splice(pointIndex, 1);
+                score += 10 * level;
+                collectedPoints++;
+                scoreDisplay.textContent = `점수: ${score}`;
+                if (collectedPoints === totalPoints) {
+                    gameWin();
+                    return;
+                }
+            } else {
+                pretzel.pop();
+            }
+
+            draw();
+        }
+
+        function startGame() {
+            if (gameRunning) return;
+            gameRunning = true;
+            paused = false;
+            startButton.disabled = true;
+            pauseButton.disabled = false;
+            pauseButton.textContent = '일시정지';
+            messageContainer.textContent = '게임 시작!';
+            pretzel = [{ x: 10, y: 10 }];
+            direction = { x: 1, y: 0 };
+            score = 0;
+            collectedPoints = 0;
+            level = 1;
+            gameSpeed = 200;
+            scoreDisplay.textContent = `점수: ${score}`;
+            generatePoints();
+            clearInterval(gameInterval);
+            gameInterval = setInterval(update, gameSpeed);
+        }
+
+        function pauseGame() {
+            if (!gameRunning) return;
+            if (paused) {
+                gameInterval = setInterval(update, gameSpeed);
+                pauseButton.textContent = '일시정지';
+                messageContainer.textContent = '게임 재개!';
+                paused = false;
+            } else {
+                clearInterval(gameInterval);
+                pauseButton.textContent = '계속';
+                messageContainer.textContent = '게임 일시정지!';
+                paused = true;
+            }
+        }
+
+        function gameOver() {
+            clearInterval(gameInterval);
+            gameRunning = false;
+            paused = false;
+            startButton.disabled = false;
+            pauseButton.disabled = true;
+            pauseButton.textContent = '일시정지';
+            messageContainer.textContent = `게임 오버! 점수: ${score}  다시 시작하려면 시작 버튼을 누르세요.`;
+            pretzel = [{ x: 10, y: 10 }];
+            direction = { x: 1, y: 0 };
+            generatePoints();
+            collectedPoints = 0;
+            level = 1;
+            gameSpeed = 200;
+        }
+
+        function gameWin() {
+            clearInterval(gameInterval);
+            gameRunning = false;
+            paused = false;
+            startButton.disabled = false;
+            pauseButton.disabled = true;
+            pauseButton.textContent = '일시정지';
+            messageContainer.textContent = `레벨 업! ${level}단계 클리어!`;
+            pretzel = [{ x: 10, y: 10 }];
+            direction = { x: 1, y: 0 };
+            generatePoints();
+            collectedPoints = 0;
+            level++;
+            if (level <= 5) {
+                gameSpeed -= 20;
+                if (gameSpeed < 100) {
+                    gameSpeed = 100;
+                }
+                setTimeout(() => {
+                    messageContainer.textContent = `다음 레벨 ${level} 시작!`;
+                    gameInterval = setInterval(update, gameSpeed);
+                    gameRunning = true;
+                    paused = false;
+                    startButton.disabled = true;
+                    pauseButton.disabled = false;
+                }, 1500);
+            } else {
+                messageContainer.textContent = `최고 레벨 달성! 게임 클리어! 총점: ${score} 다시 시작하려면 시작 버튼을 누르세요.`;
+            }
+        }
+
+        function resetGame() {
+            if (gameRunning) clearInterval(gameInterval);
+            gameRunning = false;
+            paused = false;
+            startButton.disabled = false;
+            pauseButton.disabled = true;
+            pauseButton.textContent = '일시정지';
+            messageContainer.textContent = '게임을 초기화합니다. 시작 버튼을 누르세요.';
+            pretzel = [{ x: 10, y: 10 }];
+            direction = { x: 1, y: 0 };
+            score = 0;
+            collectedPoints = 0;
+            level = 1;
+            gameSpeed = 200;
+            scoreDisplay.textContent = `점수: ${score}`;
+            generatePoints();
+            draw();
+        }
+
+        document.addEventListener('keydown', event => {
+            if (!gameRunning || paused) return;
+            switch (event.key) {
+                case 'ArrowUp':
+                    if (direction.y !== 1) { direction = { x: 0, y: -1 }; }
+                    break;
+                case 'ArrowDown':
+                    if (direction.y !== -1) { direction = { x: 0, y: 1 }; }
+                    break;
+                case 'ArrowLeft':
+                    if (direction.x !== 1) { direction = { x: -1, y: 0 }; }
+                    break;
+                case 'ArrowRight':
+                    if (direction.x !== -1) { direction = { x: 1, y: 0 }; }
+                    break;
+            }
+        });
+
+        startButton.addEventListener('click', startGame);
+        pauseButton.addEventListener('click', pauseGame);
+        resetButton.addEventListener('click', resetGame);
+
+        infoButton.addEventListener('click', () => {
+            infoModal.style.display = 'flex';
+        });
+
+        closeModalButton.addEventListener('click', () => {
+            infoModal.style.display = 'none';
+        });
+
+        modalCloseButton.addEventListener('click', () => {
+            infoModal.style.display = 'none';
+        });
+
+        window.addEventListener('click', (event) => {
+            if (event.target === infoModal) {
+                infoModal.style.display = 'none';
+            }
+        });
+
+        resetGame();
+    </script>
+</body>
+</html>
