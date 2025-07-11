@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>프리첼 게임 (터치버튼 포함)</title>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      font-family: 'Press Start 2P', sans-serif;
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background-color: #f0f0f0;
+      flex-direction: column;
+    }
+    .game-container {
+      text-align: center;
+      background-color: #fff;
+      padding: 24px;
+      border-radius: 12px;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+      max-width: 90%;
+      width: 450px;
+      position: relative;
+    }
+    h1 {
+      color: #a78bfa;
+      margin-bottom: 16px;
+      font-size: 2em;
+    }
+    #game-canvas {
+      background-color: #f5f5f5;
+      border: 4px solid #d8b4fe;
+      border-radius: 8px;
+      display: block;
+      margin: 0 auto 20px auto;
+      max-width: 100%;
+      height: auto;
+    }
+    #score-display {
+      font-size: 1.5em;
+      color: #fcd34d;
+      margin-bottom: 20px;
+      font-weight: bold;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    }
+    #message-container {
+      margin-bottom: 20px;
+      color: #6b7280;
+      font-size: 1.1em;
+      min-height: 2.5em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px;
+      border-radius: 8px;
+      background-color: #e5e7eb;
+    }
+    .button-container {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .game-button {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      background-color: #8b5cf6;
+      color: white;
+      font-size: 1.1em;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      text-shadow: 1px 1px 0px #5b21b6;
+    }
+    .game-button:hover:not(:disabled) {
+      background-color: #7c3aed;
+    }
+    .game-button:disabled {
+      background-color: #d946ef;
+      cursor: not-allowed;
+      opacity: 0.6;
+      box-shadow: none;
+      text-shadow: none;
+    }
+    /* 모바일 전용 터치 컨트롤 */
+    .mobile-controls {
+      display: none;
+      margin-top: 10px;
+      user-select: none;
+    }
+    .mobile-controls button {
+      font-size: 1.5em;
+      padding: 14px 20px;
+      width: 60px;
+      height: 60px;
+      border-radius: 12px;
+      background-color: #a78bfa;
+      color: white;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      margin: 4px;
+    }
+    .mobile-controls button:active {
+      background-color: #7c3aed;
+    }
+    @media screen and (max-width: 768px) {
+      .mobile-controls {
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        max-width: 280px;
+        margin-left: auto;
+        margin-right: auto;
+      }
+      /* 방향버튼 배치: 위 버튼 단독 행, 좌우 아래 두개 행 */
+      .mobile-controls .up {
+        flex-basis: 100%;
+        order: 1;
+      }
+      .mobile-controls .left {
+        order: 2;
+      }
+      .mobile-controls .down {
+        order: 3;
+      }
+      .mobile-controls .right {
+        order: 4;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="game-container">
+    <h1>프리첼 게임</h1>
+    <canvas id="game-canvas" width="400" height="400"></canvas>
+    <div id="score-display">점수: 0</div>
+    <div id="message-container">게임을 초기화합니다. 시작 버튼을 누르세요.</div>
+    <div class="button-container">
+      <button id="start-button" class="game-button">시작</button>
+      <button id="pause-button" class="game-button" disabled>일시정지</button>
+      <button id="reset-button" class="game-button">초기화</button>
+      <button id="info-button" class="game-button">게임 정보</button>
+    </div>
+
+    <!-- 모바일 터치 방향 버튼 -->
+    <div class="mobile-controls" aria-label="터치 방향 버튼">
+      <button class="up" aria-label="위로 이동" type="button">⬆️</button>
+      <button class="left" aria-label="왼쪽 이동" type="button">⬅️</button>
+      <button class="down" aria-label="아래로 이동" type="button">⬇️</button>
+      <button class="right" aria-label="오른쪽 이동" type="button">➡️</button>
+    </div>
+  </div>
+
+  <div id="info-modal" class="modal" style="display:none;position:fixed;z-index:10;left:0;top:0;width:100%;height:100%;overflow:auto;background-color:rgba(0,0,0,0.5);justify-content:center;align-items:center;">
+    <div class="modal-content" style="background:#fff;color:#1f2937;padding:20px;border-radius:12px;border:4px solid #d8b4fe;max-width:80%;text-align:center;position:relative;box-shadow:0 8px 16px rgba(0,0,0,0.3);">
+      <span class="close-button" style="position:absolute;top:10px;right:10px;font-size:1.5em;cursor:pointer;color:#a78bfa;opacity:0.7;transition:opacity 0.2s ease;">&times;</span>
+      <h2 style="font-size:1.8em;margin-bottom:16px;color:#a78bfa;">프리첼 게임 정보</h2>
+      <p style="font-size:1.1em;margin-bottom:24px;color:#4b5563;">
+        화살표 키 또는 터치 버튼을 사용하여 프리첼을 움직여 모든 하얀색 점을 수집하세요.<br>
+        벽이나 자신의 꼬리에 부딪히면 게임이 종료됩니다.
+      </p>
+      <button id="close-modal-button" class="modal-button" style="padding:12px 24px;border:none;border-radius:8px;background:#8b5cf6;color:#fff;font-size:1.1em;cursor:pointer;box-shadow:0 2px 4px rgba(0,0,0,0.2);text-shadow:1px 1px 0 #5b21b6;">확인</button>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('game-canvas');
+    const ctx = canvas.getContext('2d');
+    const scoreDisplay = document.getElementById('score-display');
+    const messageContainer = document.getElementById('message-container');
+    const startButton = document.getElementById('start-button');
+    const pauseButton = document.getElementById('pause-button');
+    const resetButton = document.getElementById('reset-button');
+    const infoButton = document.getElementById('info-button');
+    const infoModal = document.getElementById('info-modal');
+    const closeModalButton = document.getElementById('close-modal-button');
+    const modalCloseButton = document.querySelector('.close-button');
+
+    const mobileUpBtn = document.querySelector('.mobile-controls .up');
+    const mobileDownBtn = document.querySelector('.mobile-controls .down');
+    const mobileLeftBtn = document.querySelector('.mobile-controls .left');
+    const mobileRightBtn = document.querySelector('.mobile-controls .right');
+
+    const gridSize = 20;
+    let pretzel = [{ x: 10, y: 10 }];
+    let direction = { x: 1, y: 0 };
+    let points = [];
+    let gameRunning = false;
+    let gameInterval;
+    let score = 0;
+    let paused = false;
+    let gameSpeed = 200;
+    let collectedPoints = 0;
+    const totalPoints = 10;
+    let level = 1;
+
+    function generatePoints() {
+      points = [];
+      for (let i = 0; i < totalPoints; i++) {
+        let x, y;
+        do {
+          x = Math.floor(Math.random() * (canvas.width / gridSize));
+          y = Math.floor(Math.random() * (canvas.height / gridSize));
+        } while (
+          points.some((p) => p.x === x && p.y === y) ||
+          (x === 10 && y === 10) ||
+          pretzel.some((p) => p.x === x && p.y === y)
+        );
+        points.push({ x, y });
+      }
+    }
+
+    function draw() {
+      ctx.fillStyle = '#f5f5f5';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // 프리첼 그리기
+      ctx.fillStyle = '#a855f7';
+      pretzel.forEach((segment) => {
+        ctx.beginPath();
+        ctx.roundRect(segment.x * gridSize, segment.y * gridSize, gridSize, gridSize, [5]);
+        ctx.fill();
+        ctx.strokeStyle = '#d946ef';
+        ctx.stroke();
+      });
+
+      // 점 그리기
+      points.forEach((point) => {
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(point.x * gridSize + gridSize / 2, point.y * gridSize + gridSize / 2, gridSize / 4, 0, 2 * Math.PI);
+        ctx.fill();
+        ctx.strokeStyle = '#e0e0e0';
+        ctx.stroke();
+      });
+    }
+
+    function update() {
+      if (!gameRunning) return;
+
+      const head = { x: pretzel[0].x + direction.x, y: pretzel[0].y + direction.y };
+
+      // 벽 충돌 검사
+      if (head.x < 0 || head.x >= canvas.width / gridSize || head.y < 0 || head.y >= canvas.height / gridSize) {
+        gameOver();
+        return;
+      }
+
+      // 자기 자신 충돌 검사
+      for (let i = 1; i < pretzel.length; i++) {
+        if (head.x === pretzel[i].x && head.y === pretzel[i].y) {
+          gameOver();
+          return;
+        }
+      }
+
+      pretzel.unshift(head);
+
+      // 점 먹기
+      let pointIndex = points.findIndex((point) => point.x === head.x && point.y === head.y);
+      if (pointIndex !== -1) {
+        points.splice(pointIndex, 1);
+        score += 10 * level;
+        collectedPoints++;
+        scoreDisplay.textContent = `점수: ${score}`;
+        if (collectedPoints === totalPoints) {
+          gameWin();
+          return;
+        }
+      } else {
+        pretzel.pop();
+      }
+
+      draw();
+    }
+
+    function startGame() {
+      if (gameRunning) return;
+      gameRunning = true;
+      paused = false;
+      startButton.disabled = true;
+      pauseButton.disabled = false;
+      pauseButton.textContent = '일시정지';
+      messageContainer.textContent = '게임 시작!';
+      pretzel = [{ x: 10, y: 10 }];
+      direction = { x: 1, y: 0 };
+      score = 0;
+      collectedPoints = 0;
+      level = 1;
+      gameSpeed = 200;
+      scoreDisplay.textContent = `점수: ${score}`;
+      generatePoints();
+      clearInterval(gameInterval);
+      gameInterval = setInterval(update, gameSpeed);
+    }
+
+    function pauseGame() {
+      if (!gameRunning) return;
+      if (paused) {
+        gameInterval = setInterval(update, gameSpeed);
+        pauseButton.textContent = '일시정지';
+        messageContainer.textContent = '게임 재개!';
+        paused = false;
+      } else {
+        clearInterval(gameInterval);
+        pauseButton.textContent = '계속';
+        messageContainer.textContent = '게임 일시정지!';
+        paused = true;
+      }
+    }
+
+    function gameOver() {
+      clearInterval(gameInterval);
+      gameRunning = false;
+      paused = false;
+      startButton.disabled = false;
+      pauseButton.disabled = true;
+      pauseButton.textContent = '일시정지';
+      messageContainer.textContent = `게임 오버! 점수: ${score}  다시 시작하려면 시작 버튼을 누르세요.`;
+      pretzel = [{ x: 10, y: 10 }];
+      direction = { x: 1, y: 0 };
+      generatePoints();
+      collectedPoints = 0;
+      level = 1;
+      gameSpeed = 200;
+      draw();
+    }
+
+    function gameWin() {
+      clearInterval(gameInterval);
+      gameRunning = false;
+      paused = false;
+      startButton.disabled = false;
+      pauseButton.disabled = true;
+      pauseButton.textContent = '일시정지';
+      messageContainer.textContent = `레벨 업! ${level}단계 클리어!`;
+      pretzel = [{ x: 10, y: 10 }];
+      direction = { x: 1, y: 0 };
+      generatePoints();
+      collectedPoints = 0;
+      level++;
+      if (level <= 5) {
+        gameSpeed -= 20;
+        if (gameSpeed < 100) {
+          gameSpeed = 100;
+        }
+        setTimeout(() => {
+          messageContainer.textContent = `다음 레벨 ${level} 시작!`;
+          gameInterval = setInterval(update, gameSpeed);
+          gameRunning = true;
+          paused = false;
+          startButton.disabled = true;
+          pauseButton.disabled = false;
+        }, 1500);
+      } else {
+        messageContainer.textContent = `최고 레벨 달성! 게임 클리어! 총점: ${score} 다시 시작하려면 시작 버튼을 누르세요.`;
+      }
+      draw();
+    }
+
+    function resetGame() {
+      if (gameRunning) clearInterval(gameInterval);
+      gameRunning = false;
+      paused = false;
+      startButton.disabled = false;
+      pauseButton.disabled = true;
+      pauseButton.textContent = '일시정지';
+      messageContainer.textContent = '게임을 초기화합니다. 시작 버튼을 누르세요.';
+      pretzel = [{ x: 10, y: 10 }];
+      direction = { x: 1, y: 0 };
+      score = 0;
+      collectedPoints = 0;
+      level = 1;
+      gameSpeed = 200;
+      scoreDisplay.textContent = `점수: ${score}`;
+      generatePoints();
+      draw();
+    }
+
+    // 키보드 방향키
+    document.addEventListener('keydown', (event) => {
+      if (!gameRunning || paused) return;
+      switch (event.key) {
+        case 'ArrowUp':
+          if (direction.y !== 1) direction = { x: 0, y: -1 };
+          break;
+        case 'ArrowDown':
+          if (direction.y !== -1) direction = { x: 0, y: 1 };
+          break;
+        case 'ArrowLeft':
+          if (direction.x !== 1) direction = { x: -1, y: 0 };
+          break;
+        case 'ArrowRight':
+          if (direction.x !== -1) direction = { x: 1, y: 0 };
+          break;
+      }
+    });
+
+    // 모바일 터치 버튼 이벤트 연결
+    mobileUpBtn.addEventListener('click', () => {
+      if (!gameRunning || paused) return;
+      if (direction.y !== 1) direction = { x: 0, y: -1 };
+    });
+    mobileDownBtn.addEventListener('click', () => {
+      if (!gameRunning || paused) return;
+      if (direction.y !== -1) direction = { x: 0, y: 1 };
+    });
+    mobileLeftBtn.addEventListener('click', () => {
+      if (!gameRunning || paused) return;
+      if (direction.x !== 1) direction = { x: -1, y: 0 };
+    });
+    mobileRightBtn.addEventListener('click', () => {
+      if (!gameRunning || paused) return;
+      if (direction.x !== -1) direction = { x: 1, y: 0 };
+    });
+
+    startButton.addEventListener('click', startGame);
+    pauseButton.addEventListener('click', pauseGame);
+    resetButton.addEventListener('click', resetGame);
+
+    infoButton.addEventListener('click', () => {
+      infoModal.style.display = 'flex';
+    });
+
+    closeModalButton.addEventListener('click', () => {
+      infoModal.style.display = 'none';
+    });
+    modalCloseButton.addEventListener('click', () => {
+      infoModal.style.display = 'none';
+    });
+    window.addEventListener('click', (event) => {
+      if (event.target === infoModal) {
+        infoModal.style.display = 'none';
+      }
+    });
+
+    // 캔버스에 roundRect 메서드가 없으면 추가 (브라우저 호환)
+    if (!CanvasRenderingContext2D.prototype.roundRect)
